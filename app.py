@@ -109,11 +109,7 @@ db = SQLAlchemy(app)
 print(">>> after SQLAlchemy(app)")
 
 # ✅ AUTO CREATE TABLES ON RENDER (PRODUCTION ONLY)
-if os.getenv("RENDER"):
-    print(">>> Running db.create_all() on Render")
-    with app.app_context():
-        db.create_all()
-        print(">>> Tables created successfully on Render")
+
 
 csrf = CSRFProtect(app)
 mail = Mail(app)
@@ -1857,20 +1853,14 @@ def resend_email_otp():
     return redirect(url_for("verify_email"))    
 
 
-# =========================
-# INIT / RUN
-# =========================
-def init_db():
-    print(">>> init_db(): enter")
-    with app.app_context():
-        print(">>> init_db(): before create_all()")
-        db.create_all()
-        print(">>> init_db(): after create_all()")
+
+# ✅ FORCE CREATE TABLES ON STARTUP (Render + Local Safe)
+print(">>> Creating tables on startup...")
+with app.app_context():
+    db.create_all()
+print(">>> Tables ensured.")
 
 
 if __name__ == "__main__":
-    print(">>> main: before init_db()")
-    init_db()
-    print(">>> main: after init_db()")
     print(">>> main: before app.run()")
     app.run(debug=True, port=5001, host="127.0.0.1", use_reloader=False, threaded=True)
