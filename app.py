@@ -26,36 +26,7 @@ def generate_email_otp():
 def hash_otp(otp: str):
     return hashlib.sha256(otp.encode()).hexdigest()
 
-def send_email_otp(user):
-    otp = generate_email_otp()
 
-    user.email_otp_hash = hash_otp(otp)
-    user.email_otp_expiry = datetime.utcnow() + timedelta(minutes=5)
-    user.email_otp_attempts = 0
-    db.session.commit()
-    try:
-        mail.send(msg)
-        print("EMAIL SENT SUCCESSFULLY")
-    except Exception as e:
-       print("EMAIL ERROR:", e)
-
-    msg = Message(
-        subject="LGU3 Account Verification Code",
-        recipients=[user.email],
-        body=f"""
-
-Barangay LGU3 Business Permit System
-
-Your verification code is: {otp}
-
-This code will expire in 5 minutes.
-Do not share this code with anyone.
-
-If you did not request this, please ignore this email.
-"""
-    )
-
-    mail.send(msg)
 
 from dotenv import load_dotenv
 from sqlalchemy import extract, func
@@ -134,6 +105,14 @@ app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_USERNAME")
 print(">>> before SQLAlchemy(app)")
 db = SQLAlchemy(app)
 print(">>> after SQLAlchemy(app)")
+
+# ✅ AUTO CREATE TABLES ON RENDER (PRODUCTION ONLY)
+if os.getenv("RENDER"):
+    print(">>> Running db.create_all() on Render")
+    with app.app_context():
+        db.create_all()
+        print(">>> Tables created successfully on Render")
+
 csrf = CSRFProtect(app)
 mail = Mail(app)
 
