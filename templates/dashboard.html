@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Barangay LGU3{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+.welcome-section{
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
+  border-radius: 16px;
+  padding: 2.5rem;
+  color: white;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  margin-bottom: 2.5rem;
+}
+.card{
+  background: rgba(30,41,59,0.95);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 25px rgba(0,0,0,0.35);
+}
+.badge{ padding: .35rem .75rem; border-radius: 9999px; font-weight: 600; font-size: .85rem; }
+.badge-pending{ background:#f59e0b; color:#111; }
+.badge-review{ background:#0dcaf0; color:#fff; }
+.badge-approved{ background:#198754; color:#fff; }
+.badge-rejected{ background:#dc3545; color:#fff; }
+.badge-paid{ background:#22c55e; color:#fff; }
+.badge-unpaid{ background:#0ea5e9; color:#fff; }
+.badge-waived{ background:rgba(255,255,255,0.14); color:#e6eef8; border:1px solid rgba(255,255,255,0.18); }
+.alert-renew{
+  background: rgba(220,53,69,0.15);
+  border: 1px solid #dc3545;
+  color: #dc3545;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+.table-responsive{ max-height:460px; overflow:auto; padding: 1rem; }
+.table thead th{ position: sticky; top:0; background: rgba(17,24,39,0.92); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  <div class="welcome-section text-center">
+    <h2 class="fw-bold mb-2">Welcome back, {{ current_user.first_name or current_user.username }}!</h2>
+    <p class="lead mb-2">{{ current_user.email }}</p>
+    <span class="badge bg-dark fs-6 px-4 py-2">{{ current_user.role|capitalize }} Account</span>
+  </div>
+
+  {% if current_user.status == 'rejected' %}
+  <div class="alert alert-danger shadow mb-4">
+    <h5 class="fw-bold"><i class="fas fa-times-circle me-2"></i>Your account was rejected</h5>
+    <p class="mb-2"><strong>Reason:</strong></p>
+    <p class="mb-3">{{ current_user.rejection_reason }}</p>
+  </div>
+  {% endif %}
+
+  {# Renewal alerts #}
+  {% for permit in permits %}
+    {% set days_left = (permit.expiry_date - today).days %}
+    {% if days_left <= 30 and days_left > 0 %}
+      <div class="alert-renew d-flex align-items-center gap-3">
+        <i class="fas fa-exclamation-triangle fa-2x"></i>
+        <div>
+          <strong>Renewal Alert:</strong> Your permit for <strong>{{ permit.business_name }}</strong>
+          expires in <strong>{{ days_left }} day{{ 's' if days_left != 1 else '' }}</strong>.
+        </div>
+      </div>
+    {% endif %}
+  {% endfor %}
+
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center bg-dark text-white">
+      <h5 class="mb-0">
+        <i class="fas fa-briefcase me-2"></i>
+        {% if current_user.role == 'admin' %}All Business Permits{% else %}Your Business Permits{% endif %}
+      </h5>
+
+      <a href="{{ url_for('register_business') }}" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i> Register New
+      </a>
+    </div>
+
+    <div class="card-body p-0">
+
+      {% if permits %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 text-light">
+          <thead class="table-dark">
+            <tr>
+              <th>Business Name</th>
+
+              {% if current_user.role == 'admin' %}
+                <th>Owner</th>
+                <th>User Email</th>
+              {% endif %}
+
+              <th>Expiry Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+          {% for permit in permits %}
+            <tr>
+              <td class="fw-medium">{{ permit.business_name }}</td>
+
+              {% if current_user.role == 'admin' %}
+                <td>{{ permit.owner_name }}</td>
+                <td>{{ permit.user.email if permit.user else '—' }}</td>
+              {% endif %}
+
+              <td>{{ permit.expiry_date.strftime('%b %d, %Y') }}</td>
+
+              <td>
+                <span class="badge
+                  {% if permit.status == 'pending' %}badge-pending
+                  {% elif permit.status == 'for_review' %}badge-review
+                  {% elif permit.status == 'approved' %}badge-approved
+                  {% elif permit.status == 'rejected' %}badge-rejected
+                  {% else %}bg-secondary{% endif %}">
+                  {{ permit.status|capitalize }}
+                </span>
+
+                {% if permit.status == 'approved' %}
+                  {% if permit.payment_status == 'paid' %}
+                    <span class="badge badge-paid">Paid</span>
+                  {% elif permit.payment_status == 'waived' %}
+                    <span class="badge badge-waived">Waived</span>
+                  {% else %}
+                    <span class="badge badge-unpaid">Unpaid</span>
+                  {% endif %}
+                {% endif %}
+              </td>
+
+              <!-- ✅ ACTIONS (FIXED NESTING) -->
+              <td>
+                {% if permit.status == 'approved' %}
+
+                  {# ✅ ONLY USER PAYS #}
+                  {% if current_user.role != 'admin'
+                        and permit.payment_required
+                        and permit.payment_status not in ['paid','waived'] %}
+
+                    <a href="{{ url_for('pay_permit', permit_id=permit.id) }}" class="btn btn-sm btn-success">
+  <i class="fas fa-receipt me-1"></i> Submit Payment
+</a>
+                  {% else %}
+
+                    {# If payment still required but not paid/waived #}
+                    {% if permit.payment_required and permit.payment_status not in ['paid','waived'] %}
+                      <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="text-warning small">Waiting for payment</span>
+
+                        {% if current_user.role == 'admin' %}
+                          <a href="{{ url_for('admin_payments') }}" class="btn btn-sm btn-outline-info">
+                            <i class="fas fa-cash-register me-1"></i> Check Payment
+                          </a>
+                        {% endif %}
+                      </div>
+
+                    {% else %}
+                      <a href="{{ url_for('download_permit', permit_id=permit.id) }}"
+                         class="btn btn-sm btn-info" target="_blank">
+                        <i class="fas fa-file-pdf me-1"></i> Download
+                      </a>
+                    {% endif %}
+
+                  {% endif %}
+
+                {% elif permit.status == 'rejected' %}
+                  <span class="text-danger small">Rejected</span>
+
+               {% else %}
+  {% if permit.status == 'pending' %}
+    <span class="text-warning small">Pending approval</span>
+  {% elif permit.status == 'for_review' %}
+    <span class="text-info small">Under review</span>
+  {% else %}
+    <span class="text-warning small">In process</span>
+  {% endif %}
+{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% else %}
+      <div class="text-center py-5 text-muted">
+        <i class="fas fa-folder-open fa-4x mb-3"></i>
+        <h5>No permits registered yet</h5>
+        <p>Start by registering your first business permit.</p>
+        <a href="{{ url_for('register_business') }}" class="btn btn-primary">
+          <i class="fas fa-plus-circle me-2"></i> Register Now
+        </a>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Monitoring{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+<h1>Permit Monitoring (Admin)</h1>
+
+<h3 class="mt-5">Detected Duplicates</h3>
+{% if duplicates %}
+    <table class="table table-dark table-hover">
+        <thead>
+            <tr>
+                <th>Permit ID</th>
+                <th>Business Name</th>
+                <th>Address</th>
+                <th>Similarity %</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p1, p2, sim in duplicates %}
+            <tr>
+                <td>{{ p1.id }} & {{ p2.id }}</td>
+                <td>{{ p1.business_name }}</td>
+                <td>{{ p1.address }}</td>
+                <td>{{ sim }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No duplicates found.</p>
+{% endif %}
+
+<h3 class="mt-5">Invalid/Expired Permits</h3>
+{% if invalids %}
+    <table class="table table-dark table-hover">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Business Name</th>
+                <th>TIN</th>
+                <th>Expiry</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in invalids %}
+            <tr>
+                <td>{{ p.id }}</td>
+                <td>{{ p.business_name }}</td>
+                <td>{{ p.tin }}</td>
+                <td>{{ p.expiry_date }} {% if p.expiry_date < today %}<span class="badge bg-danger">Expired</span>{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No invalid permits found.</p>
+{% endif %}
+</div>
+{% endblock %}

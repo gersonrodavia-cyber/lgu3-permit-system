@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Verify Permit{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="card p-4">
+    <h3 class="mb-3">Permit Verification</h3>
+
+    {% if ok %}
+      <div class="alert alert-success">
+        ✅ This permit is valid and verified.
+      </div>
+
+      <p><b>Code:</b> {{ code }}</p>
+      <p><b>Business:</b> {{ permit.business_name }}</p>
+      <p><b>Owner:</b> {{ permit.owner_name }}</p>
+      <p><b>Address:</b> {{ permit.address }}</p>
+      <p><b>Expiry:</b> {{ permit.expiry_date.strftime('%b %d, %Y') }}</p>
+      <p><b>Status:</b> {{ permit.status }}</p>
+
+    {% else %}
+      <div class="alert alert-danger">
+        ❌ {{ message }}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

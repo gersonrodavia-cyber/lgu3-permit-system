@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Permit History{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+<h2 class="mb-4">Permit Timeline</h2>
+
+<div class="timeline">
+    {% for item in history %}
+    <div class="timeline-item mb-4 p-4 rounded shadow-sm bg-dark text-light">
+        <h5>{{ item.type|capitalize }}</h5>
+        <p><strong>Created:</strong> {{ item.created_at.strftime('%b %d, %Y') }}</p>
+        <p><strong>Expiry:</strong> {{ item.expiry_date.strftime('%b %d, %Y') }}</p>
+
+   {% if item.status == 'approved' %}
+    <span class="badge bg-success">Approved</span>
+
+    {% if item.approved_at %}
+        <p class="mt-2 small text-success">
+            <strong>Approved On:</strong>
+            {{ item.approved_at.strftime('%b %d, %Y %I:%M %p') }}
+        </p>
+    {% endif %}
+
+{% elif item.status == 'rejected' %}
+    <span class="badge bg-danger">Rejected</span>
+
+    {% if item.rejected_at %}
+        <p class="mt-2 small text-danger">
+            <strong>Rejected On:</strong>
+            {{ item.rejected_at.strftime('%b %d, %Y %I:%M %p') }}
+        </p>
+    {% endif %}
+
+    {% if item.rejected_reason %}
+        <div class="mt-2 p-2 bg-danger bg-opacity-10 border border-danger rounded small text-danger">
+            <strong>Reason:</strong> {{ item.rejected_reason }}
+        </div>
+    {% endif %}
+
+{% else %}
+    <span class="badge bg-warning text-dark">Pending</span>
+{% endif %}
+
+       
+    </div>
+    {% endfor %}
+</div>
+</div>
+{% endblock %}

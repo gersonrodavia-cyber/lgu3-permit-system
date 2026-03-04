@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .actions-wrap { white-space: nowrap; }
+  .action-btn { min-width: 95px; }   /* keeps buttons same size */
+</style>
+
+<div class="container mt-4">
+
+  <h3 class="mb-4">Manage Business Owners</h3>
+
+  <!-- Search + Filter -->
+  <form method="GET" class="row g-3 mb-3">
+    <div class="col-md-4">
+      <input type="text" name="search" value="{{ search }}"
+             class="form-control"
+             placeholder="Search name, email, business...">
+    </div>
+
+    <div class="col-md-3">
+      <select name="status" class="form-select">
+        <option value="all" {% if status=='all' %}selected{% endif %}>All</option>
+        <option value="pending" {% if status=='pending' %}selected{% endif %}>Pending</option>
+        <option value="approved" {% if status=='approved' %}selected{% endif %}>Approved</option>
+        <option value="rejected" {% if status=='rejected' %}selected{% endif %}>Rejected</option>
+      </select>
+    </div>
+
+    <div class="col-md-2">
+      <button class="btn btn-primary w-100">Filter</button>
+    </div>
+  </form>
+
+  <!-- Bulk approve only when viewing Pending -->
+  {% if status == 'pending' %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <button class="btn btn-success px-4 py-2" onclick="bulkApprove()">
+      <i class="fas fa-check me-2"></i> Bulk Approve
+    </button>
+  </div>
+  {% endif %}
+
+  <div class="glass-card p-4">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle premium-table">
+        <thead>
+          <tr>
+            <th width="40">
+  {% if status == 'pending' %}
+    <input type="checkbox" id="select-all">
+  {% endif %}
+</th>
+            </th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Business</th>
+            <th>Status</th>
+            <th>Reason</th>
+            <th width="220" class="text-center">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for user in users %}
+          <tr id="row-{{ user.id }}">
+
+            <td>
+  {% if status == 'pending' and user.status == 'pending' %}
+    <input type="checkbox" class="user-checkbox" value="{{ user.id }}">
+  {% endif %}
+</td>
+
+
+            <td>{{ user.first_name }} {{ user.last_name }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.business_name }}</td>
+
+            <td>
+              {% if user.status == 'approved' %}
+                <span class="badge bg-success">Approved</span>
+              {% elif user.status == 'pending' %}
+                <span class="badge bg-warning text-dark">Pending</span>
+              {% elif user.status == 'rejected' %}
+                <span class="badge bg-danger">Rejected</span>
+              {% else %}
+                <span class="badge bg-secondary">{{ user.status }}</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if user.status == 'rejected' and user.rejection_reason %}
+                <button class="btn btn-sm btn-outline-danger"
+                        onclick="showReason(`{{ user.rejection_reason | escape }}`)">
+                  View
+                </button>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+
+            <!-- ✅ Actions for all statuses -->
+           <td class="text-center">
+  <div class="d-flex justify-content-center align-items-center gap-2 flex-nowrap actions-wrap">
+
+    {% if user.status != 'approved' %}
+      <button class="btn btn-success btn-sm action-btn"
+              onclick="approveUser({{ user.id }})">
+        <i class="fas fa-check me-1"></i> Approve
+      </button>
+    {% endif %}
+
+    {% if user.status != 'rejected' %}
+      <button class="btn btn-danger btn-sm action-btn"
+              onclick="rejectUser({{ user.id }})">
+        <i class="fas fa-times me-1"></i> Reject
+      </button>
+    {% endif %}
+
+  </div>
+</td>
+
+          </tr>
+          {% endfor %}
+
+          {% if users|length == 0 %}
+          <tr>
+            <td colspan="7" class="text-center text-muted">
+              No users found.
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function approveUser(userId) {
+  Swal.fire({
+    title: "Approve this user?",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonColor: "#198754",
+    confirmButtonText: "Yes, approve"
+  }).then((result) => {
+    if (!result.isConfirmed) return;
+
+    fetch('/admin/approve-user/' + userId, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': "{{ csrf_token() }}"
+      }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        Swal.fire("Approved!", data.message, "success").then(() => location.reload());
+      } else {
+        Swal.fire("Error", data.message || "Failed", "error");
+      }
+    });
+  });
+}
+
+function rejectUser(userId) {
+  Swal.fire({
+    title: "Reject this user?",
+    input: "textarea",
+    inputLabel: "Rejection Reason",
+    inputPlaceholder: "Enter rejection reason here...",
+    showCancelButton: true,
+    confirmButtonColor: "#dc3545",
+    confirmButtonText: "Reject",
+    preConfirm: (reason) => {
+      if (!reason) Swal.showValidationMessage("Rejection reason is required");
+      return reason;
+    }
+  }).then((result) => {
+    if (!result.isConfirmed) return;
+
+    fetch('/admin/reject-user/' + userId, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': "{{ csrf_token() }}"
+      },
+      body: JSON.stringify({ reason: result.value })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        Swal.fire("Rejected!", data.message, "success").then(() => location.reload());
+      } else {
+        Swal.fire("Error", data.message || "Failed", "error");
+      }
+    });
+  });
+}
+
+function showReason(reason) {
+  Swal.fire({
+    title: "Rejection Reason",
+    text: reason,
+    icon: "info",
+    confirmButtonColor: "#0d6efd"
+  });
+}
+
+function bulkApprove() {
+  let selected = [];
+  document.querySelectorAll(".user-checkbox:checked").forEach(cb => selected.push(cb.value));
+
+  if (selected.length === 0) {
+    Swal.fire("No users selected", "", "warning");
+    return;
+  }
+
+  Swal.fire({
+    title: "Approve selected users?",
+    text: selected.length + " users will be approved",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonColor: "#198754",
+    confirmButtonText: "Yes, approve all"
+  }).then((result) => {
+    if (!result.isConfirmed) return;
+
+    Swal.fire({
+      title: "Processing...",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    fetch('/admin/bulk-approve', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': "{{ csrf_token() }}"
+      },
+      body: JSON.stringify({ users: selected })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        Swal.fire("Success", data.message, "success").then(() => location.reload());
+      } else {
+        Swal.fire("Error", data.message || "Failed", "error");
+      }
+    });
+  });
+}
+
+// Select All checkbox ONLY if it exists
+document.addEventListener("DOMContentLoaded", function () {
+  const selectAll = document.getElementById("select-all");
+  if (!selectAll) return;
+
+  selectAll.addEventListener("change", function () {
+    document.querySelectorAll(".user-checkbox").forEach(cb => cb.checked = this.checked);
+  });
+});
+</script>
+{% endblock %}

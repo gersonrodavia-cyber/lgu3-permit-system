@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Renewals{% endblock %}
+
+{% block content %}
+
+<div class="container py-4">
+
+  <!-- SUMMARY CARDS -->
+  <div class="row mb-4">
+      <div class="col-md-3">
+          <div class="card shadow-lg border-0 text-center bg-dark text-light">
+              <div class="card-body">
+                  <h6 class="text-muted">Total Permits</h6>
+                  <h3 class="fw-bold">{{ permits|length }}</h3>
+              </div>
+          </div>
+      </div>
+
+      <div class="col-md-3">
+          <div class="card shadow-lg border-0 text-center bg-dark text-light">
+              <div class="card-body">
+                  <h6 class="text-muted">Approved</h6>
+                  <h3 class="fw-bold text-success">
+                      {{ permits | selectattr("status","equalto","approved") | list | length }}
+                  </h3>
+              </div>
+          </div>
+      </div>
+
+      <div class="col-md-3">
+          <div class="card shadow-lg border-0 text-center bg-dark text-light">
+              <div class="card-body">
+                  <h6 class="text-muted">Pending</h6>
+                  <h3 class="fw-bold text-warning">
+                      {{ permits | selectattr("status","equalto","pending") | list | length }}
+                  </h3>
+              </div>
+          </div>
+      </div>
+
+      <div class="col-md-3">
+          <div class="card shadow-lg border-0 text-center bg-dark text-light">
+              <div class="card-body">
+                  <h6 class="text-muted">Rejected</h6>
+                  <h3 class="fw-bold text-danger">
+                      {{ permits | selectattr("status","equalto","rejected") | list | length }}
+                  </h3>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <h2 class="mb-4">Renew Business Permit</h2>
+
+  <input type="text" id="searchInput" class="form-control mb-3"
+          placeholder="Search Business Name...">
+
+  <table class="table table-dark table-hover align-middle">
+      <thead>
+          <tr>
+              <th>Business Name</th>
+              <th>Expiry Date</th>
+              <th>Status</th>
+              <th width="220">Action</th>
+          </tr>
+      </thead>
+      <tbody>
+      {% for permit in permits %}
+          <tr>
+              <td>{{ permit.business_name }}</td>
+
+              <!-- EXPIRY DISPLAY -->
+              <td>
+              {% if permit.expiry_date < today %}
+                  <span class="text-danger fw-bold">
+                      {{ permit.expiry_date.strftime('%b %d, %Y') }}
+                      <small>(Expired)</small>
+                  </span>
+              {% elif permit.expiry_date <= today + timedelta(days=30) %}
+                  <span class="text-warning fw-bold">
+                      {{ permit.expiry_date.strftime('%b %d, %Y') }}
+                      <small>(Expiring Soon)</small>
+                  </span>
+              {% else %}
+                  {{ permit.expiry_date.strftime('%b %d, %Y') }}
+              {% endif %}
+              </td>
+
+              <!-- STATUS -->
+              <td>
+                  {% if permit.status == 'approved' %}
+                      <span class="badge bg-success rounded-pill px-3">Approved</span>
+                  {% elif permit.status == 'rejected' %}
+                      <span class="badge bg-danger rounded-pill px-3">Rejected</span>
+                  {% elif permit.status == 'pending' %}
+                      <span class="badge bg-warning text-dark rounded-pill px-3">Pending</span>
+                  {% elif permit.status == 'for_review' %}
+                      <span class="badge bg-info text-dark rounded-pill px-3">For Review</span>
+                  {% endif %}
+              </td>
+
+              <!-- ACTION -->
+              <td>
+                  {% set eligible = (
+                      permit.status == 'approved' and
+                      permit.expiry_date >= today and
+                      permit.expiry_date <= today + timedelta(days=30)
+                  ) %}
+
+                  {% if eligible %}
+                      <a href="{{ url_for('renew_permit', permit_id=permit.id) }}"
+                          class="btn btn-sm btn-warning">
+                          Renew
+                      </a>
+                  {% else %}
+                      <span class="text-muted small">Not eligible</span>
+                  {% endif %}
+
+                  <a href="{{ url_for('permit_history', permit_id=permit.id) }}"
+                      class="btn btn-sm btn-outline-light ms-1">
+                      History
+                  </a>
+              </td>
+          </tr>
+      {% endfor %}
+      </tbody>
+  </table>
+</div>
+
+<script>
+document.getElementById("searchInput").addEventListener("keyup", function() {
+let value = this.value.toLowerCase();
+document.querySelectorAll("tbody tr").forEach(row => {
+  row.style.display =
+    row.textContent.toLowerCase().includes(value) ? "" : "none";
+});
+});
+</script>
+
+{% endblock %}

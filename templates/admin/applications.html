@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% block title %}Applications - LGU3{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <h3 class="mb-4">Permit Applications</h3>
+
+  <!-- Search + Filter -->
+  <form method="GET" class="row g-3 mb-3">
+    <div class="col-md-5">
+      <input type="text" name="search" value="{{ search }}"
+             class="form-control"
+             placeholder="Search business, owner, address, TIN...">
+    </div>
+
+    <div class="col-md-3">
+      <select name="status" class="form-select">
+        <option value="pending" {% if status=='pending' %}selected{% endif %}>Pending</option>
+        <option value="approved" {% if status=='approved' %}selected{% endif %}>Approved</option>
+        <option value="rejected" {% if status=='rejected' %}selected{% endif %}>Rejected</option>
+        <option value="all" {% if status=='all' %}selected{% endif %}>All</option>
+      </select>
+    </div>
+
+    <div class="col-md-2">
+      <button class="btn btn-primary w-100" type="submit">Filter</button>
+    </div>
+  </form>
+
+  <div class="glass-card p-4">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle premium-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Business</th>
+            <th>Owner</th>
+            <th>Type</th>
+            <th>Created</th>
+            <th>Expiry</th>
+            <th>Status</th>
+            <th class="text-center">Payment</th>
+            <th class="text-center" width="220">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for p in permits %}
+          <tr>
+            <!-- ID -->
+            <td>{{ p.id }}</td>
+
+            <!-- Business / Owner / Type (adjust field names to match your model) -->
+            <td>{{ p.business_name or p.business or '—' }}</td>
+            <td>{{ p.owner_name or p.owner or '—' }}</td>
+            <td>{{ p.permit_type or p.type or '—' }}</td>
+
+            <!-- Dates -->
+            <td>{{ p.created_at.strftime('%b %d, %Y') if p.created_at else '—' }}</td>
+            <td>{{ p.expiry_date.strftime('%b %d, %Y') if p.expiry_date else '—' }}</td>
+
+            <!-- ✅ Status (ONLY ONCE) -->
+            <td id="status-{{ p.id }}">
+              {% if p.status == 'approved' %}
+                <span class="badge bg-success">Approved</span>
+              {% elif p.status == 'pending' %}
+                <span class="badge bg-warning text-dark">Pending</span>
+              {% elif p.status == 'rejected' %}
+                <span class="badge bg-danger">Rejected</span>
+              {% else %}
+                <span class="badge bg-secondary">{{ p.status }}</span>
+              {% endif %}
+            </td>
+
+            <!-- ✅ Payment Toggle -->
+            <td id="payment-{{ p.id }}" class="text-center">
+              {% if p.status == 'approved' %}
+                <div class="form-check form-switch d-flex justify-content-center">
+                  <input class="form-check-input" type="checkbox"
+                         {% if p.payment_required %}checked{% endif %}
+                         onchange="togglePaymentRequired({{ p.id }}, this.checked)">
+                </div>
+                <div class="small mt-1 {% if p.payment_required %}text-info{% else %}text-muted{% endif %}">
+                  {% if p.payment_required %}Required{% else %}Waived{% endif %}
+                </div>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+
+            <!-- ✅ Actions -->
+            <td id="actions-{{ p.id }}" class="text-center">
+              {% if p.status == 'pending' %}
+                <div class="d-flex justify-content-center gap-2">
+                  <button type="button"
+                          class="btn btn-success btn-sm d-flex align-items-center gap-1"
+                          onclick="approvePermit({{ p.id }})">
+                    <i class="fas fa-check"></i> Approve
+                  </button>
+
+                  <button type="button"
+                          class="btn btn-danger btn-sm d-flex align-items-center gap-1"
+                          onclick="rejectPermit({{ p.id }})">
+                    <i class="fas fa-times"></i> Reject
+                  </button>
+                </div>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+
+          {% if permits|length == 0 %}
+          <tr>
+            <td colspan="9" class="text-center text-muted">No applications found.</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <nav class="mt-3">
+    <ul class="pagination">
+      {% for page_num in pagination.iter_pages() %}
+        {% if page_num %}
+          <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+            <a class="page-link"
+               href="{{ url_for('admin_applications', page=page_num, status=status, search=search) }}">
+              {{ page_num }}
+            </a>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </nav>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function approvePermit(permitId) {
+  Swal.fire({
+    title: "Approve this application?",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonColor: "#198754",
+    confirmButtonText: "Approve"
+  }).then((result) => {
+    if (!result.isConfirmed) return;
+
+    Swal.fire({ title: "Processing...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    fetch('/admin/approve-permit/' + permitId, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': "{{ csrf_token() }}"
+      }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        Swal.fire("Approved!", data.message, "success");
+
+        document.getElementById("status-" + permitId).innerHTML =
+          `<span class="badge bg-success">Approved</span>`;
+
+        document.getElementById("payment-" + permitId).innerHTML =
+          `<div class="form-check form-switch d-flex justify-content-center">
+             <input class="form-check-input" type="checkbox" checked
+                    onchange="togglePaymentRequired(${permitId}, this.checked)">
+           </div>
+           <div class="small mt-1 text-info">Required</div>`;
+
+        document.getElementById("actions-" + permitId).innerHTML = "—";
+      } else {
+        Swal.fire("Error", data.message || "Failed", "error");
+      }
+    });
+  });
+}
+
+function rejectPermit(permitId) {
+  Swal.fire({
+    title: "Reject this application?",
+    input: "textarea",
+    inputLabel: "Rejection Reason",
+    inputPlaceholder: "Enter rejection reason here...",
+    showCancelButton: true,
+    confirmButtonColor: "#dc3545",
+    confirmButtonText: "Reject",
+    preConfirm: (reason) => {
+      if (!reason) Swal.showValidationMessage("Rejection reason is required");
+      return reason;
+    }
+  }).then((result) => {
+    if (!result.isConfirmed) return;
+
+    Swal.fire({ title: "Processing...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    const form = new FormData();
+    form.append("reason", result.value);
+
+    fetch('/admin/reject-permit/' + permitId, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': "{{ csrf_token() }}" },
+      body: form
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        Swal.fire("Rejected!", data.message, "success");
+
+        document.getElementById("status-" + permitId).innerHTML =
+          `<span class="badge bg-danger">Rejected</span>`;
+
+        document.getElementById("payment-" + permitId).innerHTML = "—";
+        document.getElementById("actions-" + permitId).innerHTML = "—";
+      } else {
+        Swal.fire("Error", data.message || "Failed", "error");
+      }
+    });
+  });
+}
+
+function togglePaymentRequired(permitId, required) {
+  fetch(`/admin/permits/${permitId}/toggle-payment`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": "{{ csrf_token() }}"
+    },
+    body: JSON.stringify({ required })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: required ? "Payment required" : "Payment waived",
+        showConfirmButton: false,
+        timer: 1500
+      });
+    } else {
+      Swal.fire("Error", data.message || "Failed", "error");
+    }
+  })
+  .catch(() => Swal.fire("Error", "Network error", "error"));
+}
+</script>
+{% endblock %}

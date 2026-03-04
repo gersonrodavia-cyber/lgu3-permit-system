@@ -1,0 +1,675 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - LGU3{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+  canvas:hover { filter: drop-shadow(0 15px 25px rgba(59,130,246,0.4)); transition: 0.3s ease; }
+  body { background: linear-gradient(135deg, #0f172a, #020617); color: #e2e8f0; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 240px; min-height: 100vh;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    border-right: 1px solid rgba(255,255,255,0.1);
+    transition: all 0.3s ease;
+  }
+  .sidebar.collapsed { width: 80px; }
+  .sidebar a {
+    color: #94a3b8; text-decoration: none;
+    padding: 12px 20px; display: flex; align-items: center; gap: 12px;
+    transition: 0.3s;
+  }
+  .sidebar a:hover { background: rgba(59,130,246,0.2); color: #3b82f6; }
+
+  /* Cards */
+  .glass-card {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(14px);
+    border-radius: 18px;
+    transition: all 0.25s ease;
+  }
+  .glass-card:hover { transform: translateY(-6px); box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
+
+  .btn { border-radius: 12px; transition: 0.2s ease; }
+  .btn:hover { transform: scale(1.05); }
+
+  /* Table */
+  .table-dark-custom { background: transparent; color: #e2e8f0; }
+  .table-dark-custom th { border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .table-dark-custom td { border-color: rgba(255,255,255,0.05); }
+
+  /* Toggle */
+  .toggle-btn { cursor: pointer; color: #3b82f6; font-size: 20px; }
+
+  .glass-card.warning-glow { border: 1px solid #fbbf24; box-shadow: 0 0 10px rgba(251,191,36,0.2); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="d-flex">
+
+  <!-- Sidebar -->
+  <div class="sidebar p-3" id="sidebar">
+    <h4 class="text-white mb-4">Admin</h4>
+
+    <a href="{{ url_for('admin_dashboard') }}"
+       class="{% if request.endpoint == 'admin_dashboard' %}text-primary fw-bold{% endif %}">
+      <i class="fas fa-chart-line"></i> Dashboard
+    </a>
+
+    <a href="{{ url_for('manage_users') }}"
+       class="{% if request.endpoint == 'manage_users' %}text-primary fw-bold{% endif %} d-flex justify-content-between align-items-center">
+      <span><i class="fas fa-users"></i> Users</span>
+      {% if pending_users > 0 %}
+        <span class="badge bg-danger rounded-pill">{{ pending_users }}</span>
+      {% endif %}
+    </a>
+
+    <a href="{{ url_for('admin_businesses') }}"
+       class="{% if request.endpoint == 'admin_businesses' %}text-primary fw-bold{% endif %}">
+      <i class="fas fa-building"></i> Businesses
+    </a>
+
+    <a href="{{ url_for('reports') }}"
+       class="{% if request.endpoint == 'reports' %}text-primary fw-bold{% endif %}">
+      <i class="fas fa-file-alt"></i> Reports
+    </a>
+
+    <a href="{{ url_for('settings') }}"
+       class="{% if request.endpoint == 'settings' %}text-primary fw-bold{% endif %}">
+      <i class="fas fa-cog"></i> Settings
+    </a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="flex-fill p-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="fw-bold">Dashboard Overview</h2>
+      <i class="fas fa-bars toggle-btn" id="toggleSidebar"></i>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="row g-4 mb-4">
+      <div class="col-md-3">
+        <div class="glass-card p-4">
+          <h6 class="text-secondary">Total Permits</h6>
+          <h2 class="fw-bold text-primary counter" data-target="{{ total_permits }}">0</h2>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="glass-card p-4">
+          <h6 class="text-secondary">Pending</h6>
+          <h2 id="pendingCounter" class="fw-bold text-warning counter" data-target="{{ pending }}">0</h2>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="glass-card p-4">
+          <h6 class="text-secondary">Approved</h6>
+          <h2 id="approvedCounter" class="fw-bold text-success counter" data-target="{{ approved }}">0</h2>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="glass-card p-4">
+          <h6 class="text-secondary">Rejected</h6>
+          <h2 id="rejectedCounter" class="fw-bold text-danger counter" data-target="{{ rejected }}">0</h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-md-3">
+        <div class="glass-card p-4 text-center">
+          <h6 class="text-secondary">Applications Today</h6>
+          <h2 class="fw-bold text-primary counter" data-target="{{ today_count }}">0</h2>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="glass-card p-4 text-center">
+          <h6 class="text-secondary">Approved Today</h6>
+          <h2 class="fw-bold text-success counter" data-target="{{ approved_today }}">0</h2>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="glass-card p-4 text-center">
+          <h6 class="text-secondary">Rejected Today</h6>
+          <h2 class="fw-bold text-danger counter" data-target="{{ rejected_today }}">0</h2>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="glass-card p-4 text-center {% if pending_users > 0 %}warning-glow{% endif %}">
+          <h6 class="text-secondary">Pending User Accounts</h6>
+          <h2 class="fw-bold text-warning counter" data-target="{{ pending_users }}">0</h2>
+          {% if pending_users > 0 %}
+            <a href="{{ url_for('manage_users') }}" class="btn btn-outline-warning btn-sm mt-2">Review</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Chart -->
+    <div class="glass-card p-4 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">
+          Monthly Registrations
+          <span id="growthBadge" class="badge bg-secondary ms-2">—</span>
+        </h5>
+        <button id="chartToggle" class="btn btn-sm btn-outline-light">Switch to Line</button>
+      </div>
+
+      <div id="regChartWrap" style="height: 300px; max-width: 900px; margin: auto;">
+        <canvas id="regChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Payment Breakdown Donut -->
+    <div class="glass-card p-4 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Payment Breakdown</h5>
+        <div class="d-flex gap-2">
+          <span class="badge bg-success" id="paidBadge">Paid: {{ paid_count }}</span>
+          <span class="badge bg-info text-dark" id="unpaidBadge">Unpaid: {{ unpaid_count }}</span>
+          <span class="badge bg-secondary" id="waivedBadge">Waived: {{ waived_count }}</span>
+        </div>
+      </div>
+
+      <div style="height: 300px; max-width: 520px; margin: auto;">
+        <canvas id="paymentChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Pending Table -->
+    <div class="glass-card p-4">
+      <h5 class="mb-3">Pending Applications</h5>
+      <div class="table-responsive">
+        <table class="table table-dark-custom align-middle">
+          <thead>
+            <tr>
+              <th>Business</th>
+              <th>Owner</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in pending_list %}
+            <tr data-id="{{ item.id }}">
+              <td>{{ item.business_name }}</td>
+              <td>{{ item.owner_name }}</td>
+              <td>{{ item.type }}</td>
+              <td>
+                {% if item.status == 'pending' %}
+                  <span class="badge bg-warning text-dark">Pending</span>
+                {% elif item.status == 'for_review' %}
+                  <span class="badge bg-info text-dark">For Review</span>
+                {% elif item.status == 'approved' %}
+                  <span class="badge bg-success">Approved</span>
+                {% elif item.status == 'rejected' %}
+                  <span class="badge bg-danger">Rejected</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ item.status }}</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                {% if item.status in ['pending','for_review'] %}
+                  <button class="approve-btn btn btn-sm btn-success">Approve</button>
+                  <button class="reject-btn btn btn-sm btn-danger">Reject</button>
+                {% else %}
+                  <span class="text-muted small">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="text-center text-muted">No pending applications</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- All Permits Payment -->
+    <div class="glass-card p-4 mt-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">All Permits (Payment)</h5>
+        <div class="text-muted small">Latest permits and payment status</div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-dark-custom align-middle">
+          <thead>
+            <tr>
+              <th>Business</th>
+              <th>Owner</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Payment</th>
+              <th class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in all_permits %}
+            <tr>
+              <td>{{ p.business_name }}</td>
+              <td>{{ p.owner_name }}</td>
+              <td>{{ p.user.email if p.user else "—" }}</td>
+
+              <td>
+                {% if p.status == 'approved' %}
+                  <span class="badge bg-success">Approved</span>
+                {% elif p.status == 'pending' %}
+                  <span class="badge bg-warning text-dark">Pending</span>
+                {% elif p.status == 'rejected' %}
+                  <span class="badge bg-danger">Rejected</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ p.status }}</span>
+                {% endif %}
+              </td>
+
+              <td>
+                {% if p.status == 'approved' %}
+                  {% if p.payment_status == 'paid' %}
+                    <span class="badge bg-success">Paid</span>
+                  {% elif p.payment_status == 'waived' %}
+                    <span class="badge bg-secondary">Waived</span>
+                  {% else %}
+                    <span class="badge bg-info text-dark">Unpaid</span>
+                  {% endif %}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+
+              <td class="text-center">
+                {% if p.status == 'approved' and p.payment_status in ['paid','waived'] %}
+                  <a class="btn btn-sm btn-info" target="_blank"
+                     href="{{ url_for('generate_permit', permit_id=p.id) }}">Download</a>
+                {% else %}
+                  <span class="text-muted small">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted">No permits yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Activity Log -->
+    <div class="glass-card p-4 mt-4">
+      <h5 class="mb-3">Admin Activity Log</h5>
+
+      <a href="{{ url_for('export_logs', filter=request.args.get('filter','all')) }}" class="btn btn-sm btn-success mb-3">
+        <i class="fas fa-file-csv"></i> Export Logs CSV
+        </a>
+
+      <div class="mb-3">
+        <a href="{{ url_for('admin_dashboard', filter='all') }}" class="btn btn-sm btn-outline-light">All</a>
+        <a href="{{ url_for('admin_dashboard', filter='today') }}" class="btn btn-sm btn-outline-light">Today</a>
+        <a href="{{ url_for('admin_dashboard', filter='week') }}" class="btn btn-sm btn-outline-light">Last 7 Days</a>
+        <a href="{{ url_for('admin_dashboard', filter='month') }}" class="btn btn-sm btn-outline-light">Last 30 Days</a>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-sm align-middle table-dark-custom">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Admin</th>
+              <th>Business</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log, username, business_name in recent_logs %}
+            <tr>
+              <td class="small">{{ log.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+              <td class="small text-info">{{ username }}</td>
+              <td class="small">{{ business_name }}</td>
+              <td class="small">
+                {% if "Approved" in log.action %}
+                  <span class="text-success"><i class="fas fa-check-circle"></i> {{ log.action }}</span>
+                {% elif "Rejected" in log.action %}
+                  <span class="text-danger"><i class="fas fa-times-circle"></i> {{ log.action }}</span>
+                {% else %}
+                  {{ log.action }}
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" class="text-center text-muted small">No activity yet</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="d-flex justify-content-center mt-3">
+          {% if pagination.has_prev %}
+            <a href="{{ url_for('admin_dashboard', page=pagination.prev_num) }}" class="btn btn-sm btn-outline-light me-2">Previous</a>
+          {% endif %}
+          {% if pagination.has_next %}
+            <a href="{{ url_for('admin_dashboard', page=pagination.next_num) }}" class="btn btn-sm btn-outline-light">Next</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* =========================
+   GLOBALS
+========================= */
+let paymentChartInstance = null;
+let regChartInstance = null;
+
+/* =========================
+   Sidebar toggle
+========================= */
+document.addEventListener("DOMContentLoaded", () => {
+  const t = document.getElementById("toggleSidebar");
+  if (t) t.addEventListener("click", () =>
+    document.getElementById("sidebar").classList.toggle("collapsed")
+  );
+});
+
+/* =========================
+   Counter animation
+========================= */
+function animateCounters() {
+  document.querySelectorAll(".counter").forEach(counter => {
+    const target = +counter.getAttribute("data-target");
+    let current = +counter.innerText || 0;
+    const increment = Math.max(1, Math.ceil(target / 40));
+
+    const step = () => {
+      if (current < target) {
+        current = Math.min(target, current + increment);
+        counter.innerText = current;
+        setTimeout(step, 20);
+      } else {
+        counter.innerText = target;
+      }
+    };
+    step();
+  });
+}
+
+document.addEventListener("DOMContentLoaded", animateCounters);
+
+/* =========================
+   Payment Donut Chart
+========================= */
+function renderOrUpdatePaymentChart(paid, unpaid, waived) {
+  const canvas = document.getElementById("paymentChart");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+
+  if (!paymentChartInstance) {
+    paymentChartInstance = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: ["Paid", "Unpaid", "Waived"],
+        datasets: [{
+          data: [paid, unpaid, waived],
+          backgroundColor: ["#22c55e", "#0ea5e9", "rgba(255,255,255,0.25)"],
+          borderWidth: 0,
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "70%",
+        plugins: {
+          legend: { labels: { color: "#cbd5e1" } }
+        }
+      }
+    });
+  } else {
+    paymentChartInstance.data.datasets[0].data = [paid, unpaid, waived];
+    paymentChartInstance.update();
+  }
+}
+
+/* =========================
+   Monthly Registration Chart (last 6 months)
+========================= */
+function renderRegistrationChart() {
+  const canvas = document.getElementById("regChart");
+  const wrap = document.getElementById("regChartWrap");
+  if (!canvas || !wrap) return;
+
+  const ctx = canvas.getContext("2d");
+  const full = {{ monthly_reg_data | tojson }};
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  const now = new Date();
+  const m = now.getMonth();
+
+  const labels = [];
+  const data = [];
+  for (let i = 5; i >= 0; i--) {
+    const idx = (m - i + 12) % 12;
+    labels.push(monthNames[idx]);
+    data.push(full[idx] || 0);
+  }
+
+  // Growth badge
+  const badge = document.getElementById("growthBadge");
+  const thisMonth = data[data.length - 1] || 0;
+  const lastMonth = data[data.length - 2] || 0;
+
+  if (badge) {
+    if (lastMonth === 0 && thisMonth === 0) {
+      badge.className = "badge bg-secondary ms-2";
+      badge.innerText = "—";
+    } else if (lastMonth === 0 && thisMonth > 0) {
+      badge.className = "badge bg-success ms-2";
+      badge.innerText = "New";
+    } else {
+      const growth = ((thisMonth - lastMonth) / lastMonth) * 100;
+      badge.className = growth >= 0 ? "badge bg-success ms-2" : "badge bg-danger ms-2";
+      badge.innerText = (growth >= 0 ? "+" : "") + growth.toFixed(1) + "%";
+    }
+  }
+
+  // Empty state
+  if (data.every(v => v === 0)) {
+    wrap.innerHTML = `
+      <div class="text-center text-muted py-5">
+        <i class="fas fa-chart-bar fa-2x mb-3"></i>
+        <div class="fw-semibold">No registrations yet</div>
+        <div class="small">Once permits are created, monthly activity will appear here.</div>
+      </div>
+    `;
+    return;
+  }
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+  gradient.addColorStop(0, "#3b82f6");
+  gradient.addColorStop(1, "#1e3a8a");
+
+  regChartInstance = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        label: "Registrations",
+        data,
+        backgroundColor: gradient,
+        borderColor: "#3b82f6",
+        borderWidth: 2,
+        borderRadius: 12,
+        barThickness: 40,
+        pointRadius: 5,
+        pointHoverRadius: 8,
+        tension: 0.35
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: "#cbd5e1" } },
+        y: { beginAtZero: true, grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#cbd5e1" } }
+      }
+    }
+  });
+
+  const toggleBtn = document.getElementById("chartToggle");
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", () => {
+      const nextType = regChartInstance.config.type === "bar" ? "line" : "bar";
+      regChartInstance.config.type = nextType;
+      regChartInstance.update();
+      toggleBtn.innerText = nextType === "bar" ? "Switch to Line" : "Switch to Bar";
+    });
+  }
+}
+
+/* =========================
+   Refresh Admin Stats (counts + donut)
+========================= */
+async function refreshAdminStats() {
+  try {
+    const res = await fetch("/admin/dashboard-data");
+    const data = await res.json();
+
+    // Counters
+    const p = document.getElementById("pendingCounter");
+    const a = document.getElementById("approvedCounter");
+    const r = document.getElementById("rejectedCounter");
+    if (p) p.innerText = data.pending;
+    if (a) a.innerText = data.approved;
+    if (r) r.innerText = data.rejected;
+
+    // Badges
+    const paidBadge = document.getElementById("paidBadge");
+    const unpaidBadge = document.getElementById("unpaidBadge");
+    const waivedBadge = document.getElementById("waivedBadge");
+    if (paidBadge) paidBadge.innerText = `Paid: ${data.paid}`;
+    if (unpaidBadge) unpaidBadge.innerText = `Unpaid: ${data.unpaid}`;
+    if (waivedBadge) waivedBadge.innerText = `Waived: ${data.waived}`;
+
+    // Donut chart
+    renderOrUpdatePaymentChart(data.paid, data.unpaid, data.waived);
+
+  } catch (e) {
+    console.log("refreshAdminStats failed", e);
+  }
+}
+
+/* =========================
+   Approve / Reject (fade out + refresh)
+========================= */
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".approve-btn, .reject-btn");
+  if (!btn) return;
+
+  const row = btn.closest("tr");
+  const id = row.dataset.id;
+  const isApprove = btn.classList.contains("approve-btn");
+  let reason = null;
+
+  if (isApprove) {
+    const confirm = await Swal.fire({
+      title: "Confirm Approve?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes"
+    });
+    if (!confirm.isConfirmed) return;
+  } else {
+    const input = await Swal.fire({
+      title: "Reject Application",
+      input: "textarea",
+      inputLabel: "Reason for rejection",
+      inputPlaceholder: "Enter rejection reason...",
+      showCancelButton: true,
+      confirmButtonText: "Reject",
+      inputValidator: (v) => (!v ? "You must provide a reason!" : undefined)
+    });
+    if (!input.isConfirmed) return;
+    reason = input.value;
+  }
+
+  const url = isApprove ? `/admin/approve-permit/${id}` : `/admin/reject-permit/${id}`;
+  const formData = new FormData();
+  formData.append("csrf_token", "{{ csrf_token() }}");
+  if (!isApprove) formData.append("reason", reason);
+
+  btn.disabled = true;
+  const oldLabel = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+  try {
+    const res = await fetch(url, { method: "POST", body: formData });
+    const data = await res.json();
+
+    if (data.success) {
+      Swal.fire("Success", data.message, "success");
+
+      await refreshAdminStats();
+
+      row.style.transition = "opacity 0.4s ease";
+      row.style.opacity = 0;
+      setTimeout(() => row.remove(), 400);
+
+    } else {
+      Swal.fire("Error", data.message || "Failed", "error");
+      btn.disabled = false;
+      btn.innerHTML = oldLabel;
+    }
+  } catch (err) {
+    Swal.fire("Error", "Network error", "error");
+    btn.disabled = false;
+    btn.innerHTML = oldLabel;
+  }
+});
+
+/* =========================
+   Init charts + first refresh
+========================= */
+document.addEventListener("DOMContentLoaded", () => {
+  renderRegistrationChart();
+
+  // initial donut render using server-side counts
+  renderOrUpdatePaymentChart(
+    {{ paid_count|default(0) }},
+    {{ unpaid_count|default(0) }},
+    {{ waived_count|default(0) }}
+  );
+
+  // initial refresh to sync counts
+  refreshAdminStats();
+});
+
+/* =========================
+   Realtime refresh
+========================= */
+setInterval(refreshAdminStats, 15000);
+</script>
+
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Registered Businesses{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h2 class="mb-4">Registered Businesses</h2>
+
+  <form method="GET" class="row g-3 mb-4">
+    <div class="col-md-4">
+      <input type="text" name="search"
+             value="{{ search or '' }}"
+             class="form-control"
+             placeholder="Search business name...">
+    </div>
+
+    <div class="col-md-3">
+      <select name="status" class="form-select">
+        <option value="" {% if not status_filter %}selected{% endif %}>All Status</option>
+        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+        <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspended</option>
+        <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
+        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+      </select>
+    </div>
+
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-primary w-100">Filter</button>
+    </div>
+  </form>
+
+  <div class="table-responsive">
+    <table class="table table-dark align-middle">
+      <thead>
+        <tr>
+          <th>Business Name</th>
+          <th>Address</th>
+          <th>Status</th>
+          <th>Reason</th>
+          <th class="text-center">Action</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for business in businesses %}
+        <tr id="biz-row-{{ business.id }}">
+          <td>{{ business.business_name }}</td>
+          <td>{{ business.address }}</td>
+
+          <td>
+            {% if business.status == 'active' %}
+              <span class="badge bg-success">Active</span>
+            {% elif business.status == 'suspended' %}
+              <span class="badge bg-warning text-dark">Suspended</span>
+            {% elif business.status == 'expired' %}
+              <span class="badge bg-danger">Expired</span>
+            {% elif business.status == 'inactive' %}
+              <span class="badge bg-secondary">Inactive</span>
+            {% else %}
+              <span class="badge bg-secondary">{{ business.status }}</span>
+            {% endif %}
+          </td>
+
+          <td>
+            {% if business.status == 'suspended' and business.suspended_reason %}
+              <button class="btn btn-sm btn-outline-warning"
+                      onclick="showReason(`{{ business.suspended_reason | escape }}`)">
+                View
+              </button>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+
+          <td class="text-center">
+            {% if business.status == 'active' %}
+              <button class="btn btn-danger btn-sm"
+                      onclick="suspendBusiness({{ business.id }}, `{{ business.business_name|escape }}`)">
+                Suspend
+              </button>
+            {% else %}
+              <button class="btn btn-success btn-sm"
+                      onclick="activateBusiness({{ business.id }}, `{{ business.business_name|escape }}`)">
+                Activate
+              </button>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-center">No businesses found</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showReason(reason){
+  Swal.fire({
+    title: "Suspension Reason",
+    text: reason,
+    icon: "info",
+    confirmButtonText: "OK"
+  });
+}
+
+function suspendBusiness(id, name){
+  Swal.fire({
+    title: `Suspend "${name}"?`,
+    input: "textarea",
+    inputLabel: "Reason (required)",
+    inputPlaceholder: "Enter reason for suspension...",
+    showCancelButton: true,
+    confirmButtonText: "Suspend",
+    confirmButtonColor: "#dc3545",
+    preConfirm: (v) => {
+      if (!v) Swal.showValidationMessage("Reason is required");
+      return v;
+    }
+  }).then((res) => {
+    if (!res.isConfirmed) return;
+
+    fetch(`/admin/businesses/${id}/suspend`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": "{{ csrf_token() }}"
+      },
+      body: JSON.stringify({ reason: res.value })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        Swal.fire("Suspended", data.message, "success").then(()=>location.reload());
+      } else {
+        Swal.fire("Error", data.message || "Failed", "error");
+      }
+    })
+    .catch(()=> Swal.fire("Error", "Network error", "error"));
+  });
+}
+
+function activateBusiness(id, name){
+  Swal.fire({
+    title: `Activate "${name}"?`,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "Activate",
+    confirmButtonColor: "#198754"
+  }).then((res) => {
+    if (!res.isConfirmed) return;
+
+    fetch(`/admin/businesses/${id}/activate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": "{{ csrf_token() }}"
+      }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        Swal.fire("Activated", data.message, "success").then(()=>location.reload());
+      } else {
+        Swal.fire("Error", data.message || "Failed", "error");
+      }
+    })
+    .catch(()=> Swal.fire("Error", "Network error", "error"));
+  });
+}
+</script>
+{% endblock %}

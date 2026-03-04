@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<style>
+.card {
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+}
+.card {
+    border-radius: 12px;
+}
+
+.health-gauge {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;    
+    align-items: center;
+    margin-top: 15px;
+}
+
+.health-circle {
+     width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px;
+    font-weight: bold;
+    color: white;
+    position: relative;
+    border: 4px solid rgba(255,255,255,0.08);
+    box-shadow: 0 0 25px rgba(0,0,0,0.3);
+}
+
+/* Glow logic OUTSIDE the class */
+{% if system_health >= 75 %}
+.health-circle { box-shadow: 0 0 25px rgba(34,197,94,0.5); }
+{% elif system_health >= 50 %}
+.health-circle { box-shadow: 0 0 25px rgba(250,204,21,0.5); }
+{% else %}
+.health-circle { box-shadow: 0 0 25px rgba(239,68,68,0.5); }
+{% endif %}
+
+.health-card {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    border: none;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+}
+
+.health-gauge-wrap{
+  position: relative;
+  width: 180px;
+  height: 180px;
+  margin: 0 auto;
+}
+
+.health-center{
+  position: absolute;
+  inset: 0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+#healthValue{
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+}
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="container py-4">
+
+    <h2 class="mb-4">System Analytics Summary</h2>
+
+  <!-- System Health -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card text-white p-5 text-center health-card">
+           <h5>System Health Score</h5>
+
+<div class="health-gauge">
+  <div class="health-gauge-wrap">
+    <canvas id="healthChart" width="180" height="180"></canvas>
+    <div class="health-center">
+      <div id="healthValue">0%</div>
+    </div>
+  </div>
+
+  <div class="mt-3 text-center w-100">
+    {% if system_health >= 75 %}
+      <span class="badge bg-success">Excellent</span>
+    {% elif system_health >= 50 %}
+      <span class="badge bg-warning text-dark">Stable</span>
+    {% else %}
+      <span class="badge bg-danger">Critical</span>
+    {% endif %}
+  </div>
+</div>
+</div>
+
+<!-- Intelligence Insight -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card bg-dark text-white p-3">
+            <h5>System Intelligence Insight</h5>
+
+            {% if system_health >= 75 %}
+                <p class="text-success">
+                    ✅ System operating at optimal performance.
+                </p>
+            {% elif system_health >= 50 %}
+                <p class="text-warning">
+                    ⚠️ System is stable but requires monitoring.
+                </p>
+            {% else %}
+                <p class="text-danger">
+                    🚨 System performance is low.
+                </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+
+    
+    <div class="row g-4">
+
+        <div class="col-md-3">
+            <div class="card bg-dark text-white p-3">
+                <h6>Total Permits</h6>
+                <h2 class="counter" data-target="{{ total }}">0</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-success text-white p-3">
+                <h6>Approved</h6>
+                <h2 class="counter" data-target="{{ approved }}">0</h2>
+                <small>{{ approval_rate|round(1) }}% approval rate</small>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-danger text-white p-3">
+                <h6>Rejected</h6>
+                <h2 class="counter" data-target="{{ rejected }}">0</h2>
+                <small>{{ rejection_rate|round(1) }}% rejection rate</small>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark p-3">
+                <h6>Pending</h6>
+                <h2 class="counter" data-target="{{ pending }}">0</h2>
+            </div>
+        </div>
+
+    </div>
+
+    
+
+    <h4 class="mb-3">Business Overview</h4>
+    <hr class="my-5">
+
+    <h4 class="mb-4">Monthly Permit Trend</h4>
+    <p>
+    Monthly Growth:
+    {% if monthly_growth >= 0 %}
+        <span class="text-success">▲ {{ monthly_growth }}%</span>
+    {% else %}
+        <span class="text-danger">▼ {{ monthly_growth }}%</span>
+    {% endif %}
+</p>
+
+<div class="row g-4 mb-5">
+
+    <!-- Left: Line Chart -->
+    <div class="col-md-7">
+        <div class="card bg-dark p-3">
+            <canvas id="reportChart" style="height:300px;"></canvas>
+        </div>
+    </div>
+
+    <!-- Right: Doughnut Chart -->
+    <div class="col-md-5">
+        <div class="card bg-dark p-3">
+            <canvas id="statusChart" style="height:300px;"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    // ===== Line Chart =====
+    new Chart(document.getElementById("reportChart"), {
+        type: 'line',
+        data: {
+            labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+            datasets: [{
+                label: "Permits",
+                data: {{ monthly_reg_data | tojson }},
+                borderColor: "#22c55e",
+                backgroundColor: "rgba(34,197,94,0.2)",
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // ===== Doughnut Chart =====
+    new Chart(document.getElementById("statusChart"), {
+        type: 'doughnut',
+        data: {
+            labels: ['Approved', 'Rejected', 'Pending'],
+           datasets: [{
+  data: [{{ approved }}, {{ rejected }}, {{ pending }}],
+  backgroundColor: ['#16a34a', '#dc2626', '#facc15'],
+
+  // ✅ remove the “break” / seams
+  borderWidth: 0,
+  hoverBorderWidth: 0,
+  spacing: 0,
+  borderRadius: 0
+}]
+        },
+        options: {
+            responsive: true,
+             cutout: "70%",
+            elements: { arc: { borderWidth: 0 } },
+            plugins: {
+                legend: {
+                    labels: { color: "white" }
+                }
+            }
+        }
+    });
+
+});
+
+
+// ===== Health Gauge (Chart.js) =====
+const health = Number({{ system_health }});
+const healthColor = health >= 75 ? "#22c55e" : (health >= 50 ? "#facc15" : "#ef4444");
+
+const healthValue = document.getElementById("healthValue");
+const healthCtx = document.getElementById("healthChart");
+
+// animate number
+let current = 0;
+const target = health;
+const step = Math.max(0.5, target / 60);
+
+const numberTimer = setInterval(() => {
+  current += step;
+  if (current >= target) { current = target; clearInterval(numberTimer); }
+  healthValue.innerText = current.toFixed(1) + "%";
+}, 16);
+
+new Chart(healthCtx, {
+  type: "doughnut",
+  data: {
+    datasets: [{
+      data: [health, 100 - health],
+      backgroundColor: [healthColor, "rgba(255,255,255,0.12)"],
+      borderWidth: 0,
+      hoverBorderWidth: 0
+    }]
+  },
+  options: {
+    responsive: false,
+    cutout: "72%",
+    rotation: -90,
+    circumference: 360,
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    animation: { duration: 1000 }
+  }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const counters = document.querySelectorAll(".counter");
+    const duration = 1200;
+
+    counters.forEach(counter => {
+        const target = +counter.getAttribute("data-target");
+        let current = 0;
+
+        const increment = target / (duration / 15);
+
+        const updateCounter = () => {
+            current += increment;
+
+            if (current >= target) {
+                counter.innerText = target;
+            } else {
+                counter.innerText = Math.floor(current);
+                requestAnimationFrame(updateCounter);
+            }
+        };
+        updateCounter();
+    });
+});
+
+
+
+</script>
+
+    <div class="row g-4">
+
+        <div class="col-md-4">
+            <div class="card bg-success text-white p-3">
+                <h6>Active Businesses</h6>
+                <h2 class="counter" data-target="{{ active_businesses }}">0</h2>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-warning text-dark p-3">
+                <h6>Suspended Businesses</h6>
+                <h2 class="counter" data-target="{{ suspended_businesses }}">0</h2>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-danger text-white p-3">
+                <h6>Expired Businesses</h6>
+                <h2 class="counter" data-target="{{ expired_businesses }}">0</h2>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+{% endblock %}

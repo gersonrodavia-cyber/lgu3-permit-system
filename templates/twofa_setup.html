@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Enable 2FA{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width:720px;">
+  <div class="card bg-dark text-light shadow">
+    <div class="card-body p-4">
+      <h4 class="fw-bold mb-2">Enable Two-Factor Authentication</h4>
+      <p class="text-muted">
+        Scan this QR code using Google Authenticator / Microsoft Authenticator / Authy,
+        then enter the 6-digit code to confirm.
+      </p>
+
+      <div class="row g-4 align-items-center mt-2">
+        <div class="col-md-5 text-center">
+          <img src="data:image/png;base64,{{ qr_b64 }}" class="img-fluid rounded bg-white p-2" alt="2FA QR">
+        </div>
+
+        <div class="col-md-7">
+          <div class="alert alert-secondary">
+            <div class="small">If you can’t scan, use this secret:</div>
+            <div class="fw-bold">{{ secret }}</div>
+          </div>
+
+          <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+              <label class="form-label">Enter code from app</label>
+              <input name="code" class="form-control" placeholder="123456" maxlength="6" required>
+            </div>
+            <button class="btn btn-success w-100">Enable 2FA</button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

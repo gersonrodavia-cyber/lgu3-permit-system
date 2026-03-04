@@ -1,0 +1,341 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+
+:root{
+  --bg: #eef2f6;
+  --panel-bg: #ffffff;
+  --muted: #6c757d;
+  --accent: #1f4f9c; /* deeper blue */
+  --accent-2: #157347; /* emerald */
+}
+
+.admin-dashboard{
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  background: radial-gradient(ellipse at center, rgba(8,20,34,0.85) 0%, rgba(4,10,18,0.9) 60%, rgba(2,6,13,1) 100%), linear-gradient(180deg, #071026 0%, #0b1220 100%);
+  color: #e6eef8;
+}
+
+/* Ensure fixed navbar doesn't overlap content on all pages */
+body { padding-top: 84px; }
+
+.admin-dashboard .stats-card { background: rgba(255,255,255,0.03); border-radius:8px; padding:18px; box-shadow:0 6px 18px rgba(2,6,23,0.6); border-left:4px solid rgba(255,255,255,0.03); }
+.admin-dashboard .stats-card .small { color: rgba(230,238,248,0.75); }
+.admin-dashboard .stats-card .h4 { font-weight:700; color:#e6eef8; font-size:1.6rem }
+
+.admin-dashboard .stats-card .icon-box { width:62px; height:62px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg, rgba(31,79,156,0.06), rgba(43,111,182,0.03)); }
+.admin-dashboard .stats-card .icon-box .fa { font-size:26px; color:var(--accent); }
+
+.admin-dashboard .panel { background: rgba(255,255,255,0.02); border-radius:8px; padding:20px; box-shadow:0 8px 24px rgba(2,6,23,0.7); border:1px solid rgba(255,255,255,0.03); }
+.admin-dashboard .panel h5 { font-weight:700; color:#e6eef8; margin-bottom:0.75rem }
+.admin-dashboard .panel .table thead th { border-bottom: none; color: rgba(230,238,248,0.6); font-weight:700 }
+.admin-dashboard .panel .table tbody tr td { vertical-align: middle; color: rgba(230,238,248,0.9); }
+
+/* Hover state for table rows in panels */
+.admin-dashboard .panel .table tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+.admin-dashboard .badge-status { padding:0.35rem 0.6rem; border-radius:6px; font-weight:600; }
+.admin-dashboard .badge-status.bg-success{ background: #157347; color:#fff }
+.admin-dashboard .badge-status.bg-warning{ background: #f59e0b; color:#111 }
+.admin-dashboard .badge-status.bg-danger{ background: #dc3545; color:#fff }
+
+.admin-dashboard .nav-pills .nav-link.active { background: var(--accent); color:#fff }
+.admin-dashboard .nav-pills .nav-link { color: rgba(255,255,255,0.9) }
+.admin-dashboard .nav-pills .nav-link { padding:0.6rem 1.2rem; border-radius:6px; }
+
+.admin-dashboard .top-stats-row { margin-bottom: 1rem }
+.admin-dashboard .top-stats-row .stats-card { display:flex; align-items:center; gap:16px }
+.admin-dashboard .top-stats-row .icon-box { width:64px; height:64px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#f1f5f9; }
+.admin-dashboard .top-stats-row .icon-box .fa { font-size:26px; color:var(--accent); }
+
+.admin-dashboard .panel .view-all { text-align:right; font-size:0.9rem; }
+
+/* Navbar icon sizing in base */
+.header-gradient .bi { font-size:1.05rem; margin-right:6px; }
+.header-gradient .navbar-brand { font-size:1rem }
+
+
+/* Make chart area taller */
+.admin-dashboard #registrationChart { min-height:240px; height:240px !important }
+
+/* Global header styles used by base.html to match screenshot */
+.header-gradient {
+  background: linear-gradient(90deg, #123d7a 0%, #2b6fb6 100%);
+  color: #fff;
+}
+.header-gradient .navbar-brand { color: #fff; font-weight:700; display:flex; align-items:center; gap:12px }
+.header-gradient .navbar-brand img { border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.2) }
+.header-gradient .nav-link { color: rgba(255,255,255,0.9) !important; }
+.header-gradient .nav-link:hover { color: #fff !important; opacity:0.95 }
+.header-gradient .navbar { padding:0.6rem 0 }
+
+/* Make header taller and bolder to match screenshot */
+.header-gradient {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  box-shadow: 0 6px 30px rgba(11, 41, 77, 0.35);
+}
+.header-gradient .navbar-brand div { line-height:1 }
+.header-gradient .navbar-brand div:first-child { font-size:1.05rem }
+.header-gradient .navbar-brand div:last-child { font-size:0.78rem; opacity:0.9 }
+/* =========================================
+   PREMIUM BULK + TABLE UPGRADE
+========================================= */
+
+.admin-dashboard .premium-bulk-btn {
+  background: linear-gradient(135deg, #157347, #198754);
+  border: none;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-radius: 8px;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 14px rgba(21, 115, 71, 0.35);
+}
+
+.admin-dashboard .premium-bulk-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(21, 115, 71, 0.5);
+}
+
+.admin-dashboard .premium-bulk-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Premium Table Enhancement */
+.admin-dashboard .premium-table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.admin-dashboard .premium-table thead th {
+  background: rgba(255,255,255,0.04);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  color: rgba(230,238,248,0.65);
+}
+
+.admin-dashboard .premium-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.admin-dashboard .premium-table tbody tr:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+/* Highlight selected rows */
+.admin-dashboard .premium-table tbody tr.selected-row {
+  background: rgba(21,115,71,0.15);
+}
+
+/* Checkbox styling */
+.admin-dashboard input[type="checkbox"] {
+  accent-color: #198754;
+  transform: scale(1.1);
+}
+
+.admin-dashboard .form-control {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #e6eef8;
+}
+
+.admin-dashboard .form-control:focus {
+  background: rgba(255,255,255,0.08);
+  border-color: #198754;
+  box-shadow: none;
+}
+
+/* SETTINGS PAGE ENHANCEMENT */
+
+.settings-header h2 {
+  letter-spacing: 0.5px;
+}
+
+.settings-card {
+  padding: 25px;
+  border-radius: 14px;
+  backdrop-filter: blur(12px);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+}
+
+.section-title {
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #e6eef8;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: 10px;
+}
+
+.premium-input {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #e6eef8;
+}
+
+.premium-input:focus {
+  border-color: #198754;
+  box-shadow: 0 0 0 2px rgba(25,135,84,0.2);
+}
+
+.control-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.status-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.status-dot.active {
+  background: #198754;
+  box-shadow: 0 0 10px rgba(25,135,84,0.6);
+}
+
+.status-dot.inactive {
+  background: #dc3545;
+  box-shadow: 0 0 10px rgba(220,53,69,0.6);
+}
+
+.save-bar {
+  text-align: left;
+}
+
+/* ==================================================
+   SETTINGS PAGE FINAL OVERRIDES (PREMIUM CARD LOOK)
+   Put this at the VERY BOTTOM of admin-dashboard.css
+================================================== */
+
+.admin-dashboard .panel.settings-card {
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  border-radius: 18px !important;
+  padding: 28px !important;
+  box-shadow: 0 16px 55px rgba(0,0,0,0.55) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+/* Header spacing + readability */
+.admin-dashboard .settings-header p {
+  color: rgba(230,238,248,0.70) !important;
+}
+
+/* Titles */
+.admin-dashboard .section-title {
+  font-weight: 800 !important;
+  font-size: 1.05rem !important;
+  margin-bottom: 18px !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid rgba(255,255,255,0.12) !important;
+}
+
+/* Inputs (stronger contrast) */
+.admin-dashboard .premium-input {
+  background: rgba(0,0,0,0.35) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  color: #e6eef8 !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+}
+
+.admin-dashboard .premium-input:focus {
+  border-color: rgba(13,110,253,0.95) !important;
+  box-shadow: 0 0 0 4px rgba(13,110,253,0.22) !important;
+}
+
+/* Make rows look like "settings rows" */
+.admin-dashboard .control-row,
+.admin-dashboard .status-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 12px 0 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+.admin-dashboard .control-row:last-child,
+.admin-dashboard .status-row:last-child {
+  border-bottom: none !important;
+}
+
+/* Bigger glow status dots */
+.admin-dashboard .status-dot {
+  width: 14px !important;
+  height: 14px !important;
+  border-radius: 999px !important;
+}
+
+.admin-dashboard .status-dot.active {
+  background: #22c55e !important;
+  box-shadow: 0 0 16px rgba(34,197,94,0.75) !important;
+}
+
+.admin-dashboard .status-dot.inactive {
+  background: #ef4444 !important;
+  box-shadow: 0 0 16px rgba(239,68,68,0.65) !important;
+}
+
+/* Make save area feel like an action bar */
+.admin-dashboard .save-bar {
+  margin-top: 26px !important;
+  padding-top: 18px !important;
+  border-top: 1px solid rgba(255,255,255,0.10) !important;
+}
+
+/* Make Save button premium */
+.admin-dashboard .save-bar .btn-success {
+  background: linear-gradient(135deg, #16a34a, #15803d) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 10px 26px rgba(22,163,74,0.28) !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-dashboard .save-bar .btn-success:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 16px 40px rgba(22,163,74,0.40) !important;
+}
+
+.admin-dashboard .control-row span,
+.admin-dashboard .status-row span {
+  color: rgba(230,238,248,0.85);
+  font-weight: 600;
+}
+
+.admin-dashboard .sticky-save {
+  position: sticky;
+  bottom: 14px;
+  background: rgba(2, 6, 13, 0.65);
+  border: 1px solid rgba(255,255,255,0.10);
+  backdrop-filter: blur(18px);
+  padding: 14px;
+  border-radius: 16px;
+  box-shadow: 0 18px 60px rgba(0,0,0,0.55);
+}
+
+.admin-dashboard .status-text {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.admin-dashboard .status-text {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+

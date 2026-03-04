@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Barangay LGU3 Business Permit System{% endblock %}</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Optional admin css (safe even if empty) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-dashboard.css') }}">
+
+  <style>
+    /* Space background */
+    #particles-js{
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      background: radial-gradient(ellipse at bottom, #0a1d37 0%, #020617 100%);
+    }
+    main, nav, footer { position: relative; z-index: 1; }
+    body { padding-top: 95px; }
+
+    /* Optional: active nav link style */
+    .navbar .nav-link.active{
+      color: #fff !important;
+      font-weight: 700;
+      position: relative;
+    }
+    .navbar .nav-link.active::after{
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -6px;
+      width: 100%;
+      height: 2px;
+      background: rgba(59,130,246,0.9);
+      border-radius: 2px;
+    }
+
+    .otp-input {
+    font-size: 1.6rem;
+    letter-spacing: 10px;
+    font-weight: bold;
+}
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+  <div id="particles-js"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <div class="container">
+
+      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('home') }}">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="LGU3 Logo" width="48" height="48">
+        <div class="ms-3">
+          <div style="font-weight:800; font-size:1.1rem; letter-spacing:0.6px;">
+            BARANGAY BUSINESS REGISTRATION & RENEWAL
+          </div>
+          <div style="font-size:0.85rem; opacity:0.9">LGU3</div>
+        </div>
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <!-- ✅ IMPORTANT: collapse wrapper -->
+      <div class="collapse navbar-collapse" id="navbarNav">
+
+        <!-- LEFT / MAIN LINKS -->
+        <ul class="navbar-nav me-auto align-items-center">
+
+          {% if current_user.is_authenticated %}
+
+            {# USER LINKS (not admin) #}
+            {% if current_user.role != 'admin' %}
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+                  <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'register_business' %}active{% endif %}" href="{{ url_for('register_business') }}">
+                  <i class="bi bi-plus-square me-1"></i>New Registrations
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'renewals' %}active{% endif %}" href="{{ url_for('renewals') }}">
+                  <i class="bi bi-arrow-repeat me-1"></i>Renewals
+                </a>
+              </li>
+            {% endif %}
+
+            {# ADMIN LINKS #}
+            {% if current_user.role == 'admin' %}
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}" href="{{ url_for('admin_dashboard') }}">
+                  <i class="bi bi-speedometer2 me-1"></i>Admin Dashboard
+                </a>
+              </li>
+
+              <!-- ✅ ADDED: Users (fixes manage_users missing in navbar) -->
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'manage_users' %}active{% endif %}" href="{{ url_for('manage_users') }}">
+                  <i class="bi bi-people me-1"></i>Users
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin_businesses' %}active{% endif %}" href="{{ url_for('admin_businesses') }}">
+                  <i class="bi bi-building me-1"></i>Businesses
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin_applications' %}active{% endif %}" href="{{ url_for('admin_applications') }}">
+                  <i class="bi bi-inbox me-1"></i>Applications
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin_payments' %}active{% endif %}" href="{{ url_for('admin_payments') }}">
+                  <i class="bi bi-cash-coin me-1"></i>Payments
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'reports' %}active{% endif %}" href="{{ url_for('reports') }}">
+                  <i class="bi bi-file-earmark-text me-1"></i>Reports
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}" href="{{ url_for('settings') }}">
+                  <i class="bi bi-gear me-1"></i>Settings
+                </a>
+              </li>
+            {% endif %}
+
+          {% endif %}
+        </ul>
+
+        <!-- RIGHT / ACCOUNT AREA -->
+        <ul class="navbar-nav ms-auto align-items-center">
+          {% if current_user.is_authenticated %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle d-flex align-items-center"
+                 href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle me-2"></i>
+                {{ current_user.first_name or current_user.username }}
+              </a>
+
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <span class="dropdown-item-text small text-muted">
+                    Role: {{ current_user.role|capitalize }}
+                  </span>
+                </li>
+
+                <li><hr class="dropdown-divider"></li>
+
+                {% if current_user.role == 'admin' %}
+                  <li>
+                    <a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
+                      <i class="bi bi-speedometer2 me-2"></i>Admin Dashboard
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="{{ url_for('manage_users') }}">
+                      <i class="bi bi-people me-2"></i>Manage Users
+                    </a>
+                  </li>
+                {% else %}
+                  <li>
+                    <a class="dropdown-item" href="{{ url_for('dashboard') }}">
+                      <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                    </a>
+                  </li>
+                {% endif %}
+
+                <li><hr class="dropdown-divider"></li>
+
+                <li>
+                  <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                  </a>
+                </li>
+              </ul>
+            </li>
+
+          {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('login') }}">
+                <i class="bi bi-box-arrow-in-right me-1"></i>Login
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="btn btn-primary ms-2 px-4" href="{{ url_for('signup') }}">Sign Up</a>
+            </li>
+          {% endif %}
+        </ul>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="py-4">
+    <div class="container">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="text-center text-light py-4">
+    <div class="container">
+      <p class="mb-1">© {{ current_year }} Barangay LGU3 Business Permit System</p>
+      <p class="small mb-0">Quezon City, Philippines | Powered by Flask & MySQL</p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
+
+  <script>
+    // ✅ safe init: if particlesJS not loaded, don't crash the page
+    if (typeof particlesJS !== "undefined") {
+      particlesJS("particles-js", {
+        particles: {
+          number: { value: 60 },
+          size: { value: 2 },
+          move: { speed: 0.3 },
+          opacity: { value: 0.4 },
+          line_linked: { enable: false }
+        },
+        interactivity: {
+          events: { onhover: { enable: false }, onclick: { enable: false } }
+        }
+      });
+    }
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - Barangay LGU3 Business Permit System{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid vh-100 p-0">
+<div class="row g-0 h-100">
+    <!-- Left Side: Background Image + Overlay Text -->
+    <div class="col-lg-6 d-none d-lg-block position-relative">
+        <div class="bg-image h-100" style="
+            background: linear-gradient(rgba(5, 16, 33, 0.65), rgba(10, 29, 55, 0.65)), 
+                        url('{{ url_for('static', filename='office.jpg') }}') center/cover no-repeat;
+        ">
+            <div class="position-absolute top-50 start-50 translate-middle text-white text-center px-5">
+                <h1 class="display-4 fw-bold mb-4">Grow Your Business Locally</h1>
+                <p class="lead fs-4 opacity-90">
+                    Join our community of local producers and start your business journey 
+                    today with Barangay LGU3 support, renewal services, and AI-enhanced monitoring.
+                </p>
+                <p class="mt-4 small opacity-75">
+                    Quezon City • National Capital Region • Philippines
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Side: Login Form -->
+    <div class="col-12 col-lg-6 bg-dark d-flex align-items-center justify-content-center">
+        <div class="card bg-dark border-0 shadow-lg p-5" style="max-width: 460px; width: 100%;">
+            <div class="card-body">
+                <!-- Back Link -->
+                <a href="/" class="text-primary text-decoration-none mb-4 d-inline-block">
+                    ← Back to Home
+                </a>
+
+                <h2 class="fw-bold mb-3 text-white">Welcome Back</h2>
+                <p class="text-secondary mb-5">
+                    Sign in to your account to manage your business permits and applications.
+                </p>
+
+                <!-- Flash Messages (errors, success) -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Login Form -->
+                <form method="POST" action="{{ url_for('login') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-4">
+                        <label class="form-label text-light">Email Address</label>
+                        <input type="email" name="email" class="form-control bg-secondary border-0 text-white" 
+                                placeholder="Enter your email" required autofocus>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-light">Password</label>
+                        <div class="input-group">
+                            <input type="password" name="password" class="form-control bg-secondary border-0 text-white" 
+                                    placeholder="••••••••" required>
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <div class="text-end mt-2">
+                            <a href="#" class="text-primary small">Forgot Password?</a>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100 py-3 fw-bold">
+                        Sign In
+                    </button>
+                </form>
+
+                <p class="text-center mt-4 text-secondary">
+                    Don't have an account? 
+                    <a href="/signup" class="text-primary fw-bold">Create an Account</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Password visibility toggle script -->
+<script>
+document.getElementById('togglePassword').addEventListener('click', function () {
+    const password = document.querySelector('input[name="password"]');
+    const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+    password.setAttribute('type', type);
+    this.querySelector('i').classList.toggle('bi-eye');
+    this.querySelector('i').classList.toggle('bi-eye-slash');
+});
+</script>
+
+{% endblock %}

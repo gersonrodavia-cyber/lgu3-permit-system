@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Your Businesses{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+<h3>Your Businesses</h3>
+<table class="table table-dark table-hover">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Business Name</th>
+      <th>Address</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for b in businesses %}
+    <tr>
+      <td>{{ b.id }}</td>
+      <td>{{ b.business_name }}</td>
+      <td>{{ b.address }}</td>
+      <td>
+        {% if b.status == 'pending' %}
+          <span class="badge bg-warning text-dark">🟡 Pending</span>
+        {% elif b.status == 'approved' %}
+          <span class="badge bg-success">🟢 Approved</span>
+        {% else %}
+          <span class="badge bg-danger">🔴 Rejected</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="text-center py-4 text-muted">No businesses yet</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

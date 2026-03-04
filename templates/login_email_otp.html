@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    <div class="card p-4 mx-auto" style="max-width:400px;">
+        <h4 class="mb-3 text-center">Email Verification</h4>
+        <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    
+    <div class="mb-3">
+        <input type="text" 
+               name="otp" 
+               class="form-control text-center" 
+               placeholder="Enter 6-digit code" 
+               required>
+    </div>
+
+    <button class="btn btn-primary w-100">
+        Verify
+    </button>
+</form>
+    </div>
+</div>
+{% endblock %}

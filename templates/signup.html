@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - Barangay LGU3 Business Permit System{% endblock %}
+
+{% block content %}
+
+<style>
+/* Add this to your base.html head or custom CSS file */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+.bg-image {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+</style>
+
+<div class="container-fluid vh-100 p-0">
+<div class="row g-0 h-100">
+    <!-- Left Side: Background Image + Overlay Text -->
+    <div class="col-lg-6 d-none d-lg-flex position-relative bg-dark">
+        <div class="bg-image w-100 h-100" style="
+            background: linear-gradient(rgba(5, 16, 33, 0.7), rgba(10, 29, 55, 0.7)), 
+                        url('{{ url_for('static', filename='city-bg.jpg') }}') center/cover no-repeat;
+        ">
+            <!-- Centered Overlay Text using flex (more reliable than absolute positioning) -->
+            <div class="d-flex align-items-center justify-content-center h-100 text-white text-center px-5">
+                <div>
+                    <h1 class="display-4 fw-bold mb-4">Empowering Local Businesses</h1>
+                    <p class="lead fs-4 opacity-90 mb-4">
+                        Register your business today and access exclusive Barangay support, 
+                        renewal services, and AI-enhanced permit monitoring.
+                    </p>
+                    <p class="small opacity-75">
+                        Quezon City • National Capital Region • Philippines
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Side: Signup Form -->
+    <div class="col-12 col-lg-6 bg-dark d-flex align-items-center justify-content-center">
+        <div class="card bg-dark border-0 shadow-lg p-4 p-md-5" style="max-width: 480px; width: 100%;">
+            <div class="card-body">
+                <!-- Back Link -->
+                <a href="/" class="text-primary text-decoration-none mb-4 d-inline-block">
+                    ← Back to Home
+                </a>
+
+                <h2 class="fw-bold mb-3 text-white">Create Account</h2>
+                <p class="text-secondary mb-4">
+                    Register to start your business permit journey with Barangay LGU3.
+                </p>
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Signup Form -->
+                <form method="POST" action="{{ url_for('signup') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-light">First Name</label>
+                            <input type="text" name="first_name" class="form-control bg-secondary border-0 text-white" placeholder="John" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light">Last Name</label>
+                            <input type="text" name="last_name" class="form-control bg-secondary border-0 text-white" placeholder="Doe" required>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label text-light">Business/Company Name</label>
+                        <input type="text" name="business_name" class="form-control bg-secondary border-0 text-white" placeholder="Your Business Name" required>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label text-light">Email Address</label>
+                        <input type="email" name="email" class="form-control bg-secondary border-0 text-white" placeholder="example@email.com" required>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label text-light">Password</label>
+                        <div class="input-group">
+                            <input type="password" name="password" id="password" class="form-control bg-secondary border-0 text-white" placeholder="••••••••" required>
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="agree_terms" id="agreeTerms" required>
+                        <label class="form-check-label text-light" for="agreeTerms">
+                            I agree to the <a href="#" class="text-primary">Terms & Conditions</a>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100 mt-4 py-3 fw-bold">
+                        Create Account
+                    </button>
+                </form>
+
+                <p class="text-center mt-4 text-secondary">
+                    Already have an account? <a href="/login" class="text-primary fw-bold">Sign In</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Password Toggle Script -->
+<script>
+document.getElementById('togglePassword').addEventListener('click', function () {
+    const password = document.getElementById('password');
+    const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+    password.setAttribute('type', type);
+    this.querySelector('i').classList.toggle('bi-eye');
+    this.querySelector('i').classList.toggle('bi-eye-slash');
+});
+</script>
+
+{% endblock %}

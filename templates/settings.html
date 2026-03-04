@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="admin-dashboard">
+<div class="container mt-5">
+
+    <!-- PAGE HEADER -->
+    <div class="settings-header mb-5">
+        <h2 class="fw-bold">
+            <i class="bi bi-gear-fill me-2 text-primary"></i>
+            System Settings
+        </h2>
+        <p class="text-muted">Manage system configuration and operational controls.</p>
+    </div>
+    
+    <div class="settings-toolbar mb-4">
+  <div class="d-flex align-items-center gap-3">
+    <span class="pill">
+      <i class="bi bi-shield-check me-2"></i> Admin Only
+    </span>
+    <span class="pill">
+      <i class="bi bi-clock me-2"></i>
+      Last updated: {{ settings.updated_at.strftime('%b %d, %Y %I:%M %p') if settings.updated_at else '—' }}
+    </span>
+  </div>
+</div>
+
+    <form method="POST" action="{{ url_for('settings') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="row g-4">
+
+            <!-- LEFT PANEL -->
+            <div class="col-lg-7">
+                <div class="panel settings-card">
+
+                    <h5 class="section-title">
+                        <i class="bi bi-building me-2"></i>
+                        General Information
+                    </h5>
+
+                    <div class="mb-4">
+                        <label class="form-label">Barangay Name</label>
+                        <input type="text"
+                               name="barangay_name"
+                               class="form-control premium-input"
+                               value="{{ settings.barangay_name }}">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Contact Email</label>
+                        <input type="email"
+                               name="contact_email"
+                               class="form-control premium-input"
+                               value="{{ settings.contact_email }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Contact Phone</label>
+                        <input type="text"
+                               name="contact_phone"
+                               class="form-control premium-input"
+                               value="{{ settings.contact_phone }}">
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL -->
+            <div class="col-lg-5">
+
+                <div class="panel settings-card mb-4">
+
+                    <h5 class="section-title">
+                        <i class="bi bi-toggle-on me-2"></i>
+                        System Controls
+                    </h5>
+
+                    <div class="control-row">
+                        <span>New Registrations</span>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="registration_open"
+                                   {% if settings.registration_open %}checked{% endif %}>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <span>Renewals</span>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="renewal_open"
+                                   {% if settings.renewal_open %}checked{% endif %}>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="panel settings-card">
+
+                    <h5 class="section-title">
+                        <i class="bi bi-eye me-2"></i>
+                        Live Status
+                    </h5>
+
+                    <div class="status-row">
+  <span>Registrations</span>
+  <div class="d-flex align-items-center gap-2">
+    <span class="status-dot {{ 'active' if settings.registration_open else 'inactive' }}"></span>
+    <span class="status-text {{ 'text-success' if settings.registration_open else 'text-danger' }}">
+      {{ 'Active' if settings.registration_open else 'Disabled' }}
+    </span>
+  </div>
+</div>
+
+<div class="status-row">
+  <span>Renewals</span>
+  <div class="d-flex align-items-center gap-2">
+    <span class="status-dot {{ 'active' if settings.renewal_open else 'inactive' }}"></span>
+    <span class="status-text {{ 'text-success' if settings.renewal_open else 'text-danger' }}">
+      {{ 'Active' if settings.renewal_open else 'Disabled' }}
+    </span>
+  </div>
+</div>
+
+        <!-- STICKY SAVE BAR -->
+        <div class="save-bar sticky-save">
+  <button type="submit" class="btn btn-success px-5 py-2">
+  <i class="bi bi-save me-2"></i>
+  Save Changes
+</button>
+</div>
+
+    </form>
+
+</div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.querySelector("form");
+  const btn = form.querySelector("button[type='submit']");
+  const initial = new FormData(form);
+
+  function changed() {
+    const now = new FormData(form);
+    for (const [k, v] of now.entries()) {
+      if (initial.get(k) !== v) return true;
+    }
+    // checkboxes
+    const checks = form.querySelectorAll("input[type='checkbox']");
+    for (const c of checks) {
+      const before = initial.get(c.name) !== null;
+      if (before !== c.checked) return true;
+    }
+    return false;
+  }
+
+  function update() {
+    const isChanged = changed();
+    btn.disabled = !isChanged;
+    btn.style.opacity = isChanged ? "1" : "0.6";
+  }
+
+  form.addEventListener("input", update);
+  form.addEventListener("change", update);
+  update();
+});
+</script>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("saved") === "1") {
+    Swal.fire({
+      toast: true,
+      position: "top-end",
+      icon: "success",
+      title: "Settings saved",
+      showConfirmButton: false,
+      timer: 2200,
+      timerProgressBar: true
+    });
+  }
+</script>
+
+{% endblock %}

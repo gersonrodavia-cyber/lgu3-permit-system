@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Business - LGU3{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-5">
+<div class="col-md-8">
+    <div class="card p-4">
+        <h2 class="mb-4">Register Business</h2>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+                <label class="form-label">Business Name</label>
+                <input type="text" name="business_name" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Owner Name</label>
+                <input type="text" name="owner_name" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Address</label>
+                <input type="text" name="address" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">TIN</label>
+                <input type="text" name="tin" class="form-control" placeholder="12-digit TIN" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Expiry Date</label>
+                <input type="date" name="expiry_date" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-success">Register</button>
+            <a href="/dashboard" class="btn btn-link">Cancel</a>
+        </form>
+    </div>
+</div>
+</div>
+{% endblock %}

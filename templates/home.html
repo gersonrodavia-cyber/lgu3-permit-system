@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Barangay LGU3 - Business Permit Portal{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section -->
+<section class="hero">
+<div class="container">
+<span class="badge-pill mb-4 d-inline-block">Welcome to Barangay LGU3 Official Permit Portal</span>
+
+<h1>
+    Supporting Local Businesses<br>
+    <span class="text-primary">Registration & Renewal</span><br>
+    Growth
+</h1>
+
+<p class="lead mt-4">
+    Empowering small businesses and entrepreneurs through digitalization.<br>
+    Fast online registration, renewal, and AI-powered monitoring to prevent duplicates and invalid permits.
+</p>
+
+<div class="stat-badge">
+    <i class="bi bi-check-circle-fill me-2 text-success"></i>
+    {{ invalid_permits }} Invalid Permits Detected
+</div>
+<div class="stat-badge">
+    <i class="bi bi-people-fill me-2"></i>
+    {{ registered_businesses }} Registered Businesses
+</div>
+
+<div class="mt-5">
+    <a href="/register_business" class="btn btn-primary btn-lg px-5 py-3 me-3">
+        Start Registration
+    </a>
+    <a href="/signup" class="btn btn-outline-light btn-lg px-5 py-3">
+        Create Account
+    </a>
+</div>
+</div>
+</section>
+
+<!-- Optional: Add more sections later (Services, How it Works, etc.) -->
+<section class="container my-5 py-5">
+<h2 class="text-center mb-5">Why Choose Barangay LGU3 Digital Permits?</h2>
+<div class="row g-4">
+<div class="col-md-4">
+    <div class="card text-center p-4">
+        <i class="bi bi-shield-check fs-1 text-primary mb-3"></i>
+        <h5>AI Duplicate Detection</h5>
+        <p>Prevent fraud with smart similarity checks on names and addresses.</p>
+    </div>
+</div>
+<div class="col-md-4">
+    <div class="card text-center p-4">
+        <i class="bi bi-clock-history fs-1 text-primary mb-3"></i>
+        <h5>Fast Renewal</h5>
+        <p>Renew permits before expiry with automatic reminders and validation.</p>
+    </div>
+</div>
+<div class="col-md-4">
+    <div class="card text-center p-4">
+        <i class="bi bi-house-door fs-1 text-primary mb-3"></i>
+        <h5>Barangay-Focused</h5>
+        <p>Local, secure, and compliant with Barangay clearance requirements.</p>
+    </div>
+</div>
+</div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Pay Permit{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pay-wrap { max-width: 1100px; margin: 0 auto; }
+  .pay-card { background: rgba(15,23,42,0.70); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; }
+  .qr-box { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px; }
+  .qr-img { max-width: 320px; width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); }
+  .hint { color: #cbd5e1; font-size: 0.95rem; }
+  .note { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.4); color: #fbbf24; border-radius: 12px; padding: 12px 14px; }
+  .field-label { font-weight: 600; color: #e2e8f0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4 pay-wrap">
+
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div>
+      <h3 class="mb-1">Payment for: {{ permit.business_name }}</h3>
+      <div class="hint">Permit ID: <b>{{ permit.id }}</b> | Amount: <b>₱{{ '%.2f'|format(amount) }}</b></div>
+    </div>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light btn-sm">← Back to Dashboard</a>
+  </div>
+
+  <div class="row g-4">
+    <!-- LEFT: QR + Instructions -->
+    <div class="col-lg-5">
+      <div class="pay-card p-4 h-100">
+        <h5 class="mb-3">Pay via GCash / InstaPay (QR)</h5>
+
+        <div class="qr-box text-center">
+          <img class="qr-img" src="{{ url_for('static', filename='lgu3_gcash_qr.png') }}" alt="LGU3 GCash QR">
+          <div class="mt-3 hint">
+            Scan the QR using <b>GCash</b> or your bank app (QRPh / InstaPay).
+          </div>
+        </div>
+
+        <div class="note mt-3">
+          <b>Important:</b> The account name shown after scanning may not display “LGU3” yet (temporary collection account).
+          Always upload your receipt and reference number for verification.
+        </div>
+
+        <ol class="mt-3 hint mb-0">
+          <li>Scan QR and pay <b>₱{{ '%.2f'|format(amount) }}</b></li>
+          <li>Copy the <b>reference number</b> from the app</li>
+          <li>Upload the <b>screenshot/photo/PDF</b> receipt</li>
+          <li>Wait for admin verification (Payments → Review)</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- RIGHT: Manual Submission -->
+    <div class="col-lg-7">
+      <div class="pay-card p-4">
+        <h5 class="mb-3">Submit Payment Proof (Manual Verification)</h5>
+
+        <form method="POST" action="{{ url_for('pay_permit_manual', permit_id=permit.id) }}" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="mb-3">
+            <div class="field-label mb-1">Reference No. <span class="text-warning">*</span></div>
+            <input type="text" name="reference_no" class="form-control" placeholder="e.g. 1234567890" required>
+          </div>
+
+          <div class="mb-3">
+            <div class="field-label mb-1">Receipt (JPG/PNG/PDF) <span class="text-warning">*</span></div>
+            <input type="file" name="receipt" class="form-control" accept=".jpg,.jpeg,.png,.pdf" required>
+            <div class="hint mt-1">Upload screenshot of payment confirmation, or PDF receipt.</div>
+          </div>
+
+          <div class="mb-3">
+            <div class="field-label mb-1">Notes (optional)</div>
+            <textarea name="notes" class="form-control" rows="4" placeholder="Any notes for admin verification..."></textarea>
+          </div>
+
+          <button class="btn btn-primary w-100">
+            🧾 Submit for Payment Verification
+          </button>
+
+          <div class="hint mt-2">
+            After submitting, your payment will appear in <b>Admin → Payments → Manual Review</b>.
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
