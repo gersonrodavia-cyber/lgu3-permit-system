@@ -85,7 +85,8 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
     "pool_recycle": 280,
     "connect_args": {
-        "connect_timeout": 5
+        "connect_timeout": 5,
+        "options": "-csearch_path=public"
     }
 }
 
