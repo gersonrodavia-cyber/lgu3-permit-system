@@ -1852,6 +1852,39 @@ def resend_email_otp():
     flash("A new verification code has been sent to your email.", "info")
     return redirect(url_for("verify_email"))    
 
+@app.route("/create-admin")
+def create_admin():
+    from datetime import datetime
+    import bcrypt
+
+    email = "gersonrodavia@gmail.com"
+    password = "admin123"  # 🔥 Change after first login
+
+    existing = User.query.filter_by(email=email).first()
+    if existing:
+        return "Admin already exists."
+
+    hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+
+    admin = User(
+        username=email,
+        email=email,
+        first_name="Super",
+        last_name="Admin",
+        business_name="LGU3",
+        password=hashed,
+        role="admin",
+        status="approved",
+        is_approved=True,
+        is_email_verified=True,
+        approved_at=datetime.utcnow(),
+        twofa_enabled=False
+    )
+
+    db.session.add(admin)
+    db.session.commit()
+
+    return "Admin created successfully!"
 
 
 # ✅ FORCE CREATE TABLES ON STARTUP (Render + Local Safe)
